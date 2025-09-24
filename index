@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบตรวจสอบการจ่ายเงินค่าสอนเสริม</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Sarabun', sans-serif; }
+        .fade-in { animation: fadeIn 0.5s ease-in; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+        .loading { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        /* Slide Menu Styles */
+        .slide-menu {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease-in-out;
+        }
+        .slide-menu.open {
+            transform: translateX(0);
+        }
+        .menu-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .menu-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Menu Overlay -->
+    <div id="menuOverlay" class="menu-overlay fixed inset-0 bg-black bg-opacity-50 z-40"></div>
+
+    <!-- Slide Menu -->
+    <div id="slideMenu" class="slide-menu fixed left-0 top-0 h-full w-80 bg-white shadow-xl z-50">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h2 class="text-xl font-semibold text-gray-800">เมนู</h2>
+                <button id="closeMenu" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <nav class="p-4">
+            <ul class="space-y-2">
+                <li>
+                    <button id="menuHome" class="w-full text-left px-4 py-3 rounded-lg hover:bg-blue-50 hover:text-blue-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                        </svg>
+                        หน้าแรก
+                    </button>
+                </li>
+                <li>
+                    <button id="menuAdmin" class="w-full text-left px-4 py-3 rounded-lg hover:bg-green-50 hover:text-green-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        ดูแลระบบ
+                    </button>
+                </li>
+                <li>
+                    <button id="menuDeveloper" class="w-full text-left px-4 py-3 rounded-lg hover:bg-purple-50 hover:text-purple-600 transition-colors flex items-center">
+                        <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                        </svg>
+                        ผู้จัดทำเว็บไซต์
+                    </button>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-white shadow-lg">
+        <div class="max-w-6xl mx-auto px-4 py-6">
+            <div class="flex items-center">
+                <button id="menuButton" class="p-2 hover:bg-gray-100 rounded-lg transition-colors mr-4">
+                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                    </svg>
+                </button>
+                <div class="flex-1 text-center">
+                    <h1 class="text-3xl font-bold text-gray-800">ระบบตรวจสอบการจ่ายเงินค่าสอนเสริม</h1>
+                    <p class="text-gray-600 mt-2">กรอกรหัสนักเรียนเพื่อตรวจสอบสถานะการชำระเงิน</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-6xl mx-auto px-4 py-8">
+        <!-- Student Lookup Section -->
+        <div id="studentSection" class="bg-white rounded-xl shadow-lg p-8 mb-8 fade-in">
+            <div class="text-center mb-8">
+                <div class="w-24 h-24 mx-auto mb-4">
+                    <svg viewBox="0 0 100 100" class="w-full h-full">
+                        <!-- หน้า -->
+                        <circle cx="50" cy="35" r="18" fill="#FDBCB4" stroke="#E8A598" stroke-width="1"/>
+                        <!-- ผม -->
+                        <path d="M32 25 Q50 15 68 25 Q68 20 50 18 Q32 20 32 25" fill="#8B4513"/>
+                        <!-- ตา -->
+                        <circle cx="44" cy="32" r="2" fill="#000"/>
+                        <circle cx="56" cy="32" r="2" fill="#000"/>
+                        <circle cx="44.5" cy="31.5" r="0.5" fill="#FFF"/>
+                        <circle cx="56.5" cy="31.5" r="0.5" fill="#FFF"/>
+                        <!-- จมูก -->
+                        <circle cx="50" cy="36" r="0.8" fill="#F4A688"/>
+                        <!-- ปาก -->
+                        <path d="M47 40 Q50 42 53 40" stroke="#E8A598" stroke-width="1" fill="none"/>
+                        <!-- แก้ม -->
+                        <circle cx="40" cy="38" r="2" fill="#F8BBB4" opacity="0.6"/>
+                        <circle cx="60" cy="38" r="2" fill="#F8BBB4" opacity="0.6"/>
+                        <!-- ตัว -->
+                        <rect x="40" y="50" width="20" height="25" rx="3" fill="#4A90E2"/>
+                        <!-- แขน -->
+                        <rect x="32" y="52" width="8" height="15" rx="4" fill="#FDBCB4"/>
+                        <rect x="60" y="52" width="8" height="15" rx="4" fill="#FDBCB4"/>
+                        <!-- ขา -->
+                        <rect x="42" y="75" width="6" height="15" rx="3" fill="#2C5282"/>
+                        <rect x="52" y="75" width="6" height="15" rx="3" fill="#2C5282"/>
+                        <!-- รองเท้า -->
+                        <ellipse cx="45" cy="92" rx="4" ry="2" fill="#000"/>
+                        <ellipse cx="55" cy="92" rx="4" ry="2" fill="#000"/>
+                        <!-- กระเป๋า -->
+                        <rect x="62" y="58" width="8" height="10" rx="2" fill="#E53E3E"/>
+                        <rect x="63" y="59" width="6" height="2" fill="#C53030"/>
+                        <!-- ดาว -->
+                        <path d="M25 20 L26 22 L28 22 L26.5 23.5 L27 25.5 L25 24.5 L23 25.5 L23.5 23.5 L22 22 L24 22 Z" fill="#FFD700"/>
+                        <path d="M75 25 L76 27 L78 27 L76.5 28.5 L77 30.5 L75 29.5 L73 30.5 L73.5 28.5 L72 27 L74 27 Z" fill="#FFD700"/>
+                    </svg>
+                </div>
+                <h2 class="text-2xl font-semibold text-gray-800 mb-2">ตรวจสอบสถานะการชำระเงิน ชั้น ป.2</h2>
+                <p class="text-gray-600">กรุณากรอกรหัสนักเรียนหรือชื่อ-นามสกุลของผู้ปกครอง</p>
+            </div>
+
+            <form id="studentForm" class="max-w-md mx-auto">
+                <div class="mb-6">
+                    <label for="studentId" class="block text-sm font-medium text-gray-700 mb-2">รหัสนักเรียนหรือชื่อ-นามสกุล</label>
+                    <input type="text" id="studentId" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all" placeholder="กรอกรหัสนักเรียนหรือชื่อ-นามสกุล" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center">
+                    <span id="searchText">ตรวจสอบ</span>
+                    <div id="searchLoading" class="loading w-5 h-5 border-2 border-white border-t-transparent rounded-full ml-2 hidden"></div>
+                </button>
+            </form>
+
+            <!-- Student Result -->
+            <div id="studentResult" class="mt-8 hidden"></div>
+        </div>
+
+        <!-- Content Pages -->
+        <div id="homePage" class="page-content">
+            <!-- Home page content is already above in studentSection -->
+        </div>
+
+        <!-- Admin Page -->
+        <div id="adminPage" class="page-content hidden">
+            <div class="bg-white rounded-xl shadow-lg p-8 fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">ผู้ดูแลระบบ</h2>
+                    <p class="text-gray-600">สำหรับครูและผู้ดูแลระบบ</p>
+                </div>
+
+                <!-- Admin Login -->
+                <div id="adminLogin" class="max-w-md mx-auto">
+                    <form id="adminForm">
+                        <div class="mb-6">
+                            <label for="adminPassword" class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่านผู้ดูแลระบบ</label>
+                            <input type="password" id="adminPassword" class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all" placeholder="กรอกรหัสผ่าน" required>
+                        </div>
+                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-3 px-6 rounded-lg transition-colors">เข้าสู่ระบบ</button>
+                    </form>
+                    <div id="adminError" class="mt-4 text-red-600 text-center hidden"></div>
+                </div>
+
+                <!-- Admin Panel -->
+                <div id="adminPanel" class="hidden">
+                    <div class="border-t pt-8 mt-8">
+                        <!-- Admin Tabs -->
+                        <div class="flex space-x-4 mb-6 border-b">
+                            <button id="tabStudents" class="tab-button px-4 py-2 font-medium text-green-600 border-b-2 border-green-600">จัดการนักเรียน</button>
+                            <button id="tabSubjects" class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-green-600">จัดการวิชา</button>
+                            <button id="tabPayments" class="tab-button px-4 py-2 font-medium text-gray-500 hover:text-green-600">จัดการการชำระเงิน</button>
+                        </div>
+
+                        <!-- Students Management Tab -->
+                        <div id="studentsTab" class="tab-content">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6">จัดการข้อมูลนักเรียน</h3>
+                            
+                            <!-- Add Student Form -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">เพิ่มข้อมูลนักเรียน</h4>
+                                <form id="addStudentForm" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">รหัสนักเรียน</label>
+                                        <input type="text" id="newStudentId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                                        <input type="text" id="newStudentName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">ชั้นเรียน</label>
+                                        <input type="text" id="newStudentClass" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">วิชา</label>
+                                        <select id="newStudentSubject" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                            <option value="">เลือกวิชา</option>
+                                        </select>
+                                    </div>
+                                    <div class="md:col-span-2 flex items-end">
+                                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-6 rounded-lg transition-colors">เพิ่มนักเรียน</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Students List -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="text-lg font-medium text-gray-800">รายชื่อนักเรียนทั้งหมด</h4>
+                                    <button id="refreshList" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">รีเฟรช</button>
+                                </div>
+                                <div id="studentsList" class="space-y-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Subjects Management Tab -->
+                        <div id="subjectsTab" class="tab-content hidden">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6">จัดการวิชา</h3>
+                            
+                            <!-- Add Subject Form -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">เพิ่มวิชาใหม่</h4>
+                                <form id="addSubjectForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อวิชา</label>
+                                        <input type="text" id="newSubjectName" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">ค่าเรียน (บาท)</label>
+                                        <input type="number" id="newSubjectAmount" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">เพิ่มวิชา</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Subjects List -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">รายการวิชาทั้งหมด</h4>
+                                <div id="subjectsList" class="space-y-3"></div>
+                            </div>
+                        </div>
+
+                        <!-- Payments Management Tab -->
+                        <div id="paymentsTab" class="tab-content hidden">
+                            <h3 class="text-xl font-semibold text-gray-800 mb-6">จัดการการชำระเงิน</h3>
+                            
+                            <!-- Upload Payment Proof -->
+                            <div class="bg-gray-50 rounded-lg p-6 mb-6">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">อัปโหลดหลักฐานการชำระเงิน</h4>
+                                <form id="uploadPaymentForm" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">รหัสนักเรียน</label>
+                                        <input type="text" id="paymentStudentId" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-medium text-gray-700 mb-2">รูปภาพหลักฐาน</label>
+                                        <input type="file" id="paymentImage" accept="image/*" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" required>
+                                    </div>
+                                    <div class="flex items-end">
+                                        <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors">อัปโหลด</button>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <!-- Payment Status Management -->
+                            <div class="bg-gray-50 rounded-lg p-6">
+                                <h4 class="text-lg font-medium text-gray-800 mb-4">จัดการสถานะการชำระเงิน</h4>
+                                <div id="paymentsList" class="space-y-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Developer Page -->
+        <div id="developerPage" class="page-content hidden">
+            <div class="bg-white rounded-xl shadow-lg p-8 fade-in">
+                <div class="text-center mb-8">
+                    <div class="w-20 h-20 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-10 h-10 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+                        </svg>
+                    </div>
+                    <h2 class="text-2xl font-semibold text-gray-800 mb-2">ผู้จัดทำเว็บไซต์</h2>
+                    <p class="text-gray-600">ข้อมูลผู้พัฒนาระบบ</p>
+                </div>
+
+                <div class="max-w-2xl mx-auto">
+                    <div class="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 mb-6">
+                        <div class="text-center">
+                            <div class="w-24 h-24 bg-purple-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <span class="text-2xl font-bold text-purple-600">👨‍💻</span>
+                            </div>
+                            <h3 class="text-xl font-semibold text-gray-800 mb-2">ระบบตรวจสอบการจ่ายเงินค่าสอนเสริม</h3>
+                            <p class="text-gray-600 mb-4">พัฒนาด้วย HTML, CSS, JavaScript และ Local Storage</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-3">🛠️ เทคโนโลยีที่ใช้</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li>• HTML5 & CSS3</li>
+                                <li>• JavaScript (ES6+)</li>
+                                <li>• Tailwind CSS</li>
+                                <li>• Local Storage Database</li>
+                                <li>• Responsive Design</li>
+                            </ul>
+                        </div>
+
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <h4 class="font-semibold text-gray-800 mb-3">✨ คุณสมบัติ</h4>
+                            <ul class="space-y-2 text-sm text-gray-600">
+                                <li>• ตรวจสอบสถานะการชำระเงิน</li>
+                                <li>• ระบบจัดการข้อมูลนักเรียน</li>
+                                <li>• การยืนยันตัวตนผู้ดูแลระบบ</li>
+                                <li>• จัดเก็บข้อมูลในเครื่อง</li>
+                                <li>• รองรับการใช้งานบนมือถือ</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-6 mt-6">
+                        <div class="text-center">
+                            <h4 class="font-semibold text-blue-800 mb-2">📞 ติดต่อสอบถาม</h4>
+                            <p class="text-blue-600 text-sm">หากมีข้อสงสัยหรือต้องการปรับปรุงระบบ</p>
+                            <p class="text-blue-600 text-sm">สามารถติดต่อผู้พัฒนาได้ตามช่องทางที่กำหนด</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Modal -->
+    <div id="imageModal" class="fixed inset-0 bg-black bg-opacity-75 z-50 hidden flex items-center justify-center p-4">
+        <div class="relative max-w-4xl max-h-full">
+            <button id="closeImageModal" class="absolute top-4 right-4 text-white bg-black bg-opacity-50 rounded-full p-2 hover:bg-opacity-75 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+            <img id="modalImage" src="" alt="หลักฐานการชำระเงิน" class="max-w-full max-h-full rounded-lg">
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Configuration
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getDatabase, ref, set, get, child, push, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+
+        // Firebase Configuration - เชื่อมต่อกับ Firebase Project
+        const firebaseConfig = {
+            apiKey: "AIzaSyBebddGsyIch65fy5OPraM6Dr1BB8sOLnA",
+            authDomain: "pay-summer-68.firebaseapp.com",
+            databaseURL: "https://pay-summer-68-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "pay-summer-68",
+            storageBucket: "pay-summer-68.firebasestorage.app",
+            messagingSenderId: "23966180439",
+            appId: "1:23966180439:web:572a52a60fa0526a3e2f12",
+            measurementId: "G-FS77WSM25K"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+
+        // Firebase Database Functions
+        const FirebaseDB = {
+            async getStudents() {
+                try {
+                    const snapshot = await get(child(ref(database), 'students'));
+                    return snapshot.exists() ? snapshot.val() : {};
+                } catch (error) {
+                    console.error('Error getting students:', error);
+                    throw error;
+                }
+            },
+            
+            async setStudent(studentId, studentData) {
+                try {
+                    await set(ref(database, 'students/' + studentId), studentData);
+                    return true;
+                } catch (error) {
+                    console.error('Error setting student:', error);
+                    throw error;
+                }
+            },
+            
+            async removeStudent(studentId) {
+                try {
+                    await remove(ref(database, 'students/' + studentId));
+                    return true;
+                } catch (error) {
+                    console.error('Error removing student:', error);
+                    throw error;
+                }
+            },
+            
+            async getSubjects() {
+                try {
+                    const snapshot = await get(child(ref(database), 'subjects'));
+                    return snapshot.exists() ? snapshot.val() : {};
+                } catch (error) {
+                    console.error('Error getting subjects:', error);
+                    throw error;
+                }
+            },
+            
+            async setSubject(subjectId, subjectData) {
+                try {
+                    await set(ref(database, 'subjects/' + subjectId), subjectData);
+                    return true;
+                } catch (error) {
+                    console.error('Error setting subject:', error);
+                    throw error;
+                }
+            },
+            
+            async removeSubject(subjectId) {
+                try {
+                    await remove(ref(database, 'subjects/' + subjectId));
+                    return true;
+                } catch (error) {
+                    console.error('Error removing subject:', error);
+                    throw error;
+                }
+            }
+        };
+
+        // Admin password
+        const ADMIN_PASSWORD = "29072541";
+
+        // Menu functionality
+        const menuButton = document.getElementById('menuButton');
+        const slideMenu = document.getElementById('slideMenu');
+        const menuOverlay = document.getElementById('menuOverlay');
+        const closeMenu = document.getElementById('closeMenu');
+        const menuHome = document.getElementById('menuHome');
+        const menuAdmin = document.getElementById('menuAdmin');
+        const menuDeveloper = document.getElementById('menuDeveloper');
+
+        // Open menu
+        menuButton.addEventListener('click', function() {
+            slideMenu.classList.add('open');
+            menuOverlay.classList.add('open');
+        });
+
+        // Close menu
+        function closeMenuFunction() {
+            slideMenu.classList.remove('open');
+            menuOverlay.classList.remove('open');
+        }
+
+        closeMenu.addEventListener('click', closeMenuFunction);
+        menuOverlay.addEventListener('click', closeMenuFunction);
+
+        // Page navigation
+        function showPage(pageId) {
+            // Hide all pages
+            document.querySelectorAll('.page-content').forEach(page => {
+                page.classList.add('hidden');
+            });
+            
+            // Show selected page
+            if (pageId === 'home') {
+                document.getElementById('studentSection').classList.remove('hidden');
+            } else {
+                document.getElementById('studentSection').classList.add('hidden');
+                document.getElementById(pageId + 'Page').classList.remove('hidden');
+            }
+            
+            closeMenuFunction();
+        }
+
+        // Menu navigation
+        menuHome.addEventListener('click', () => showPage('home'));
+        menuAdmin.addEventListener('click', () => showPage('admin'));
+        menuDeveloper.addEventListener('click', () => showPage('developer'));
+
+        // Admin tabs functionality
+        function initAdminTabs() {
+            const tabButtons = document.querySelectorAll('.tab-button');
+            const tabContents = document.querySelectorAll('.tab-content');
+
+            tabButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // Remove active class from all buttons
+                    tabButtons.forEach(btn => {
+                        btn.classList.remove('text-green-600', 'border-b-2', 'border-green-600');
+                        btn.classList.add('text-gray-500');
+                    });
+
+                    // Add active class to clicked button
+                    this.classList.remove('text-gray-500');
+                    this.classList.add('text-green-600', 'border-b-2', 'border-green-600');
+
+                    // Hide all tab contents
+                    tabContents.forEach(content => content.classList.add('hidden'));
+
+                    // Show selected tab content
+                    const tabId = this.id.replace('tab', '').toLowerCase() + 'Tab';
+                    document.getElementById(tabId).classList.remove('hidden');
+
+                    // Load data for specific tabs
+                    if (tabId === 'subjectsTab') {
+                        loadSubjectsList();
+                    } else if (tabId === 'paymentsTab') {
+                        loadPaymentsList();
+                    }
+                });
+            });
+        }
+
+        // Image modal functionality
+        function showImageModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageSrc;
+            modal.classList.remove('hidden');
+        }
+
+        document.getElementById('closeImageModal').addEventListener('click', function() {
+            document.getElementById('imageModal').classList.add('hidden');
+        });
+
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.classList.add('hidden');
+            }
+        });
+
+        // Student lookup functionality
+        document.getElementById('studentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const searchInput = document.getElementById('studentId').value.trim();
+            const searchText = document.getElementById('searchText');
+            const searchLoading = document.getElementById('searchLoading');
+            const resultDiv = document.getElementById('studentResult');
+            
+            // Show loading
+            searchText.textContent = 'กำลังค้นหา...';
+            searchLoading.classList.remove('hidden');
+            resultDiv.classList.add('hidden');
+            
+            try {
+                const students = await FirebaseDB.getStudents();
+                let studentData = null;
+                
+                // First try to find by student ID (exact match)
+                if (students[searchInput]) {
+                    studentData = students[searchInput];
+                } else {
+                    // If not found by ID, search by name (case-insensitive partial match)
+                    const searchLower = searchInput.toLowerCase();
+                    const foundStudent = Object.values(students).find(student => 
+                        student.name && student.name.toLowerCase().includes(searchLower)
+                    );
+                    if (foundStudent) {
+                        studentData = foundStudent;
+                    }
+                }
+                
+                if (studentData) {
+                    displayStudentResult(studentData, true);
+                } else {
+                    displayStudentResult(null, false);
+                }
+            } catch (error) {
+                console.error('Error fetching student data:', error);
+                displayStudentResult(null, false, 'เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล');
+            }
+            
+            // Hide loading
+            searchText.textContent = 'ตรวจสอบ';
+            searchLoading.classList.add('hidden');
+        });
+
+        function displayStudentResult(studentData, found, errorMsg = '') {
+            const resultDiv = document.getElementById('studentResult');
+            
+            if (found && studentData) {
+                const isPaid = studentData.paid === true || studentData.paid === 'true';
+                const statusColor = isPaid ? 'text-green-600 bg-green-100' : 'text-red-600 bg-red-100';
+                const statusText = isPaid ? 'ชำระเงินแล้ว' : 'ยังไม่ชำระเงิน';
+                const statusIcon = isPaid ? '✅' : '❌';
+                
+                resultDiv.innerHTML = `
+                    <div class="border-t pt-6">
+                        <div class="bg-gray-50 rounded-lg p-6">
+                            <div class="text-center mb-4">
+                                <div class="text-4xl mb-2">${statusIcon}</div>
+                                <span class="inline-block px-4 py-2 rounded-full text-sm font-medium ${statusColor}">${statusText}</span>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mb-4">
+                                <div><strong>รหัสนักเรียน:</strong> ${studentData.studentId || 'ไม่ระบุ'}</div>
+                                <div><strong>ชื่อ-นามสกุล:</strong> ${studentData.name || 'ไม่ระบุ'}</div>
+                                <div><strong>ชั้นเรียน:</strong> ${studentData.class || 'ไม่ระบุ'}</div>
+                                <div><strong>วิชา:</strong> ${studentData.subject || 'ไม่ระบุ'}</div>
+                                <div><strong>จำนวนเงิน:</strong> ${studentData.amount ? studentData.amount.toLocaleString() : '0'} บาท</div>
+                            </div>
+                            ${studentData.paymentImage ? `
+                                <div class="mt-4">
+                                    <h5 class="font-medium text-gray-700 mb-2">หลักฐานการชำระเงิน:</h5>
+                                    <img src="${studentData.paymentImage}" alt="หลักฐานการชำระเงิน" class="max-w-full h-auto max-h-64 rounded-lg border border-gray-300 cursor-pointer" onclick="showImageModal('${studentData.paymentImage}')">
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            } else {
+                resultDiv.innerHTML = `
+                    <div class="border-t pt-6">
+                        <div class="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+                            <div class="text-4xl mb-2">❌</div>
+                            <p class="text-red-600 font-medium">${errorMsg || 'ไม่พบข้อมูลนักเรียนรหัสนี้'}</p>
+                            <p class="text-red-500 text-sm mt-2">กรุณาตรวจสอบรหัสนักเรียนและลองใหม่อีกครั้ง</p>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            resultDiv.classList.remove('hidden');
+        }
+
+        // Admin login functionality
+        document.getElementById('adminForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const password = document.getElementById('adminPassword').value;
+            const errorDiv = document.getElementById('adminError');
+            
+            if (password === ADMIN_PASSWORD) {
+                document.getElementById('adminLogin').classList.add('hidden');
+                document.getElementById('adminPanel').classList.remove('hidden');
+                initAdminTabs();
+                loadSubjectsList();
+                loadStudentsList();
+                errorDiv.classList.add('hidden');
+            } else {
+                errorDiv.textContent = 'รหัสผ่านไม่ถูกต้อง';
+                errorDiv.classList.remove('hidden');
+            }
+        });
+
+        // Add student functionality
+        document.getElementById('addStudentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('newStudentId').value.trim();
+            const name = document.getElementById('newStudentName').value.trim();
+            const studentClass = document.getElementById('newStudentClass').value.trim();
+            const subjectId = document.getElementById('newStudentSubject').value;
+            
+            if (!subjectId) {
+                alert('กรุณาเลือกวิชา');
+                return;
+            }
+
+            try {
+                // Get subject data to get the amount
+                const subjects = await FirebaseDB.getSubjects();
+                const subjectData = subjects[subjectId];
+                
+                if (!subjectData) {
+                    alert('ไม่พบข้อมูลวิชาที่เลือก');
+                    return;
+                }
+
+                // Create new student data
+                const studentData = {
+                    studentId: studentId,
+                    name: name,
+                    class: studentClass,
+                    subject: subjectData.name,
+                    subjectId: subjectId,
+                    amount: subjectData.amount,
+                    paid: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to Firebase
+                await FirebaseDB.setStudent(studentId, studentData);
+                
+                alert('เพิ่มข้อมูลนักเรียนเรียบร้อยแล้ว');
+                document.getElementById('addStudentForm').reset();
+                loadStudentsList();
+            } catch (error) {
+                console.error('Error adding student:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มข้อมูล: ' + error.message);
+            }
+        });
+
+        // Load students list
+        async function loadStudentsList() {
+            const listDiv = document.getElementById('studentsList');
+            listDiv.innerHTML = '<div class="text-center py-4">กำลังโหลดข้อมูล...</div>';
+            
+            try {
+                const students = await FirebaseDB.getStudents();
+                
+                if (students && Object.keys(students).length > 0) {
+                    const studentArray = Object.values(students);
+                    listDiv.innerHTML = studentArray.map(student => {
+                        const isPaid = student.paid === true || student.paid === 'true';
+                        const statusColor = isPaid ? 'text-green-600' : 'text-red-600';
+                        const statusText = isPaid ? 'ชำระแล้ว' : 'ยังไม่ชำระ';
+                        
+                        return `
+                            <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                <div class="flex justify-between items-center">
+                                    <div class="flex-1">
+                                        <div class="font-medium text-gray-800">${student.name || 'ไม่ระบุชื่อ'}</div>
+                                        <div class="text-sm text-gray-600">รหัส: ${student.studentId} | ชั้น: ${student.class} | วิชา: ${student.subject || 'ไม่ระบุ'} | จำนวน: ${(student.amount || 0).toLocaleString()} บาท</div>
+                                        ${student.paymentImage ? '<div class="text-xs text-blue-600 mt-1">📎 มีหลักฐานการชำระเงิน</div>' : ''}
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-sm font-medium ${statusColor}">${statusText}</span>
+                                        <button onclick="togglePaymentStatus('${student.studentId}', ${!isPaid})" class="ml-2 px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                                            ${isPaid ? 'ยกเลิกการชำระ' : 'ทำเครื่องหมายชำระแล้ว'}
+                                        </button>
+                                        <button onclick="deleteStudent('${student.studentId}')" class="ml-2 px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                                            ลบ
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                } else {
+                    listDiv.innerHTML = '<div class="text-center py-4 text-gray-500">ยังไม่มีข้อมูลนักเรียน</div>';
+                }
+            } catch (error) {
+                console.error('Error loading students:', error);
+                listDiv.innerHTML = '<div class="text-center py-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message + '</div>';
+            }
+        }
+
+        // Toggle payment status
+        async function togglePaymentStatus(studentId, newStatus) {
+            try {
+                const students = await FirebaseDB.getStudents();
+                if (students[studentId]) {
+                    const updatedStudent = { ...students[studentId], paid: newStatus };
+                    await FirebaseDB.setStudent(studentId, updatedStudent);
+                    loadStudentsList();
+                    alert('อัปเดตสถานะการชำระเงินเรียบร้อยแล้ว');
+                }
+            } catch (error) {
+                console.error('Error updating payment status:', error);
+                alert('เกิดข้อผิดพลาดในการอัปเดตสถานะ: ' + error.message);
+            }
+        }
+
+        // Delete student function
+        async function deleteStudent(studentId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบข้อมูลนักเรียนคนนี้?')) {
+                try {
+                    await FirebaseDB.removeStudent(studentId);
+                    alert('ลบข้อมูลนักเรียนเรียบร้อยแล้ว');
+                    loadStudentsList();
+                } catch (error) {
+                    console.error('Error deleting student:', error);
+                    alert('เกิดข้อผิดพลาดในการลบข้อมูล: ' + error.message);
+                }
+            }
+        }
+
+        // Subject management functions
+        document.getElementById('addSubjectForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const subjectName = document.getElementById('newSubjectName').value.trim();
+            const amountValue = document.getElementById('newSubjectAmount').value.trim();
+            
+            if (!subjectName) {
+                alert('กรุณากรอกชื่อวิชา');
+                return;
+            }
+            
+            if (!amountValue) {
+                alert('กรุณากรอกค่าเรียน');
+                return;
+            }
+            
+            const amount = parseInt(amountValue);
+            if (isNaN(amount) || amount <= 0) {
+                alert('กรุณากรอกค่าเรียนที่ถูกต้อง (ตัวเลขเท่านั้น)');
+                return;
+            }
+            
+            try {
+                const subjectId = 'subject_' + Date.now();
+                const subjectData = {
+                    id: subjectId,
+                    name: subjectName,
+                    amount: amount,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Save to Firebase
+                await FirebaseDB.setSubject(subjectId, subjectData);
+                
+                alert('เพิ่มวิชาเรียบร้อยแล้ว');
+                document.getElementById('addSubjectForm').reset();
+                loadSubjectsList();
+            } catch (error) {
+                console.error('Error adding subject:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มวิชา: ' + error.message);
+            }
+        });
+
+        async function loadSubjectsList() {
+            const listDiv = document.getElementById('subjectsList');
+            const selectDiv = document.getElementById('newStudentSubject');
+            
+            listDiv.innerHTML = '<div class="text-center py-4">กำลังโหลดข้อมูล...</div>';
+            
+            try {
+                const subjects = await FirebaseDB.getSubjects();
+                
+                // Update subject select dropdown
+                selectDiv.innerHTML = '<option value="">เลือกวิชา</option>';
+                
+                if (subjects && Object.keys(subjects).length > 0) {
+                    const subjectArray = Object.values(subjects);
+                    
+                    // Update dropdown
+                    subjectArray.forEach(subject => {
+                        const option = document.createElement('option');
+                        option.value = subject.id;
+                        option.textContent = `${subject.name} (${subject.amount.toLocaleString()} บาท)`;
+                        selectDiv.appendChild(option);
+                    });
+                    
+                    // Update subjects list
+                    listDiv.innerHTML = subjectArray.map(subject => `
+                        <div class="bg-white rounded-lg p-4 border border-gray-200">
+                            <div class="flex justify-between items-center">
+                                <div class="flex-1">
+                                    <div class="font-medium text-gray-800">${subject.name}</div>
+                                    <div class="text-sm text-gray-600">ค่าเรียน: ${subject.amount.toLocaleString()} บาท</div>
+                                </div>
+                                <div class="text-right">
+                                    <button onclick="deleteSubject('${subject.id}')" class="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                                        ลบ
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    listDiv.innerHTML = '<div class="text-center py-4 text-gray-500">ยังไม่มีข้อมูลวิชา</div>';
+                }
+            } catch (error) {
+                console.error('Error loading subjects:', error);
+                listDiv.innerHTML = '<div class="text-center py-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message + '</div>';
+            }
+        }
+
+        async function deleteSubject(subjectId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบวิชานี้?')) {
+                try {
+                    await FirebaseDB.removeSubject(subjectId);
+                    alert('ลบวิชาเรียบร้อยแล้ว');
+                    loadSubjectsList();
+                } catch (error) {
+                    console.error('Error deleting subject:', error);
+                    alert('เกิดข้อผิดพลาดในการลบวิชา: ' + error.message);
+                }
+            }
+        }
+
+        // Payment management functions
+        document.getElementById('uploadPaymentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('paymentStudentId').value.trim();
+            const imageFile = document.getElementById('paymentImage').files[0];
+            
+            if (!imageFile) {
+                alert('กรุณาเลือกรูปภาพ');
+                return;
+            }
+
+            try {
+                // Convert image to base64
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        const imageData = e.target.result;
+                        
+                        // Check if student exists
+                        const students = await FirebaseDB.getStudents();
+                        if (!students[studentId]) {
+                            alert('ไม่พบข้อมูลนักเรียนรหัสนี้');
+                            return;
+                        }
+                        
+                        // Update student with payment image
+                        const updatedStudent = {
+                            ...students[studentId],
+                            paymentImage: imageData,
+                            paid: true
+                        };
+                        
+                        await FirebaseDB.setStudent(studentId, updatedStudent);
+                        
+                        alert('อัปโหลดหลักฐานการชำระเงินเรียบร้อยแล้ว');
+                        document.getElementById('uploadPaymentForm').reset();
+                        loadPaymentsList();
+                    } catch (error) {
+                        console.error('Error uploading payment:', error);
+                        alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + error.message);
+                    }
+                };
+                reader.readAsDataURL(imageFile);
+            } catch (error) {
+                console.error('Error uploading payment:', error);
+                alert('เกิดข้อผิดพลาดในการอัปโหลด: ' + error.message);
+            }
+        });
+
+        async function loadPaymentsList() {
+            const listDiv = document.getElementById('paymentsList');
+            listDiv.innerHTML = '<div class="text-center py-4">กำลังโหลดข้อมูล...</div>';
+            
+            try {
+                const students = await FirebaseDB.getStudents();
+                
+                if (students && Object.keys(students).length > 0) {
+                    const studentArray = Object.values(students).filter(student => student.paymentImage);
+                    
+                    if (studentArray.length > 0) {
+                        listDiv.innerHTML = studentArray.map(student => {
+                            const isPaid = student.paid === true || student.paid === 'true';
+                            const statusColor = isPaid ? 'text-green-600' : 'text-red-600';
+                            const statusText = isPaid ? 'ชำระแล้ว' : 'ยังไม่ชำระ';
+                            
+                            return `
+                                <div class="bg-white rounded-lg p-4 border border-gray-200">
+                                    <div class="flex justify-between items-start">
+                                        <div class="flex-1">
+                                            <div class="font-medium text-gray-800">${student.name || 'ไม่ระบุชื่อ'}</div>
+                                            <div class="text-sm text-gray-600">รหัส: ${student.studentId} | ชั้น: ${student.class} | วิชา: ${student.subject || 'ไม่ระบุ'}</div>
+                                            <div class="text-sm text-gray-600">จำนวน: ${(student.amount || 0).toLocaleString()} บาท</div>
+                                            <span class="text-sm font-medium ${statusColor}">${statusText}</span>
+                                        </div>
+                                        <div class="text-right">
+                                            <img src="${student.paymentImage}" alt="หลักฐานการชำระเงิน" class="w-20 h-20 object-cover rounded-lg border border-gray-300 cursor-pointer mb-2" onclick="showImageModal('${student.paymentImage}')">
+                                            <div class="space-x-2">
+                                                <button onclick="togglePaymentStatus('${student.studentId}', ${!isPaid})" class="px-3 py-1 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded transition-colors">
+                                                    ${isPaid ? 'ยกเลิก' : 'อนุมัติ'}
+                                                </button>
+                                                <button onclick="removePaymentImage('${student.studentId}')" class="px-3 py-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded transition-colors">
+                                                    ลบรูป
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('');
+                    } else {
+                        listDiv.innerHTML = '<div class="text-center py-4 text-gray-500">ยังไม่มีหลักฐานการชำระเงิน</div>';
+                    }
+                } else {
+                    listDiv.innerHTML = '<div class="text-center py-4 text-gray-500">ยังไม่มีข้อมูลนักเรียน</div>';
+                }
+            } catch (error) {
+                console.error('Error loading payments:', error);
+                listDiv.innerHTML = '<div class="text-center py-4 text-red-500">เกิดข้อผิดพลาดในการโหลดข้อมูล: ' + error.message + '</div>';
+            }
+        }
+
+        async function removePaymentImage(studentId) {
+            if (confirm('คุณแน่ใจหรือไม่ที่จะลบหลักฐานการชำระเงิน?')) {
+                try {
+                    const students = await FirebaseDB.getStudents();
+                    if (students[studentId]) {
+                        const updatedStudent = { ...students[studentId] };
+                        delete updatedStudent.paymentImage;
+                        updatedStudent.paid = false;
+                        
+                        await FirebaseDB.setStudent(studentId, updatedStudent);
+                        alert('ลบหลักฐานการชำระเงินเรียบร้อยแล้ว');
+                        loadPaymentsList();
+                    }
+                } catch (error) {
+                    console.error('Error removing payment image:', error);
+                    alert('เกิดข้อผิดพลาดในการลบหลักฐาน: ' + error.message);
+                }
+            }
+        }
+
+        // Make functions global
+        window.togglePaymentStatus = togglePaymentStatus;
+        window.deleteStudent = deleteStudent;
+        window.deleteSubject = deleteSubject;
+        window.removePaymentImage = removePaymentImage;
+        window.showImageModal = showImageModal;
+
+        // Refresh button
+        document.getElementById('refreshList').addEventListener('click', loadStudentsList);
+
+        // Initialize default subjects if none exist
+        async function initializeDefaultData() {
+            try {
+                const subjects = await FirebaseDB.getSubjects();
+                if (!subjects || Object.keys(subjects).length === 0) {
+                    const defaultSubjects = [
+                        {
+                            id: 'subject_math',
+                            name: 'คณิตศาสตร์',
+                            amount: 500,
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'subject_science',
+                            name: 'วิทยาศาสตร์',
+                            amount: 600,
+                            createdAt: new Date().toISOString()
+                        },
+                        {
+                            id: 'subject_english',
+                            name: 'ภาษาอังกฤษ',
+                            amount: 550,
+                            createdAt: new Date().toISOString()
+                        }
+                    ];
+                    
+                    // Add each subject to Firebase
+                    for (const subject of defaultSubjects) {
+                        await FirebaseDB.setSubject(subject.id, subject);
+                    }
+                    
+                    console.log('Default subjects initialized');
+                }
+            } catch (error) {
+                console.error('Error initializing default data:', error);
+            }
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDefaultData();
+        });
+    </script>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98435fe251d9fd1c',t:'MTc1ODcyODM2Ni4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
